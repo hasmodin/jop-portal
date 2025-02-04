@@ -1,9 +1,39 @@
+import React, { useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { manageJobsData } from "../assets/assets";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
+import { AppContext } from "../context/AppContext";
+import axios from "axios";
 
 export default function ManageJob() {
+  const [jobs, setJobs] = useState([]);
   const navigate = useNavigate();
+  const { backendUrl, companyToken } = useContext(AppContext);
+
+  const fetchCompanyJobs = async () => {
+    try {
+      const { data } = await axios.get(backendUrl + "/api/company/list-job", {
+        headers: {
+          token: companyToken,
+        },
+      });
+      if (data.success) {
+        setJobs(data.jobsData.reverse());
+        console.log(data.jobsData);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+  useEffect(() => {
+    if (companyToken) {
+      fetchCompanyJobs();
+    }
+  }, [companyToken]);
+
   return (
     <div className="container p-4 max-w-5xl">
       <div className="overflow-x-auto">
@@ -23,7 +53,7 @@ export default function ManageJob() {
             </tr>
           </thead>
           <tbody>
-            {manageJobsData.map((job, index) => (
+            {jobs.map((job, index) => (
               <tr key={index} className="text-gray-500">
                 <td className="py-2 px-4 text-left border-b max-sm:hidden">
                   {index + 1}

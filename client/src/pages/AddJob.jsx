@@ -1,16 +1,53 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useContext } from "react";
 import Quill from "quill";
 import { JobCategories, JobLocations } from "../assets/assets";
+import { toast } from "react-toastify";
+
+import { AppContext } from "../context/AppContext";
+import axios from "axios";
 
 export default function AddJob() {
-  const [jobTitle, setJobTitle] = useState("");
-  const [loaction, setLocation] = useState("Banglore");
+  const { backendUrl, companyToken } = useContext(AppContext);
+
+  const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("Banglore");
   const [category, setCategory] = useState("Porgramming");
   const [level, setLevel] = useState("Beginner level");
   const [salary, setSalary] = useState(0);
 
   const editorRef = useRef(null);
   const quillRef = useRef(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const description = quillRef.current.root.innerHTML;
+      const { data } = await axios.post(
+        backendUrl + "/api/company/post-job",
+        {
+          title,
+          description,
+          location,
+          salary,
+          category,
+          level,
+        },
+        {
+          headers: { token: companyToken },
+        }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        setTitle("");
+        setSalary(0);
+        quillRef.current.root.innerHTML = "";
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   useEffect(() => {
     if (!quillRef.current && editorRef.current) {
@@ -23,6 +60,7 @@ export default function AddJob() {
 
   return (
     <form
+      onSubmit={handleSubmit}
       action=""
       className="container w-full flex flex-col gap-4 p-4 items-start"
     >
@@ -31,8 +69,8 @@ export default function AddJob() {
         <input
           type="text"
           placeholder="Type here"
-          onChange={(e) => setJobTitle(e.target.value)}
-          vlaue={jobTitle}
+          onChange={(e) => setTitle(e.target.value)}
+          vlaue={title}
           required
           className="w-full max-w-lg px-3 py-2 border-2 border-gray-300 rounded-lg"
         />

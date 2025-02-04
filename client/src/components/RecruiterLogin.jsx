@@ -1,24 +1,75 @@
 import React, { useState, useContext, useEffect } from "react";
 import { assets } from "../assets/assets";
 import { AppContext } from "../context/AppContext";
-import { use } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function RecruiterLogin() {
-  const { setShowRecruiterLogin } = useContext(AppContext);
+  const navigate = useNavigate();
+  const { setShowRecruiterLogin, backendUrl, setCompanyToken, setCompanyData } =
+    useContext(AppContext);
   const [state, setState] = useState("login");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [image, setImage] = useState(null);
 
-  const [image, setImage] = useState(false);
   const [isTextDataSubmited, setIsTextDataSubmited] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // if (state === "Sing Up" && !isTextDataSubmited) {
-    //   setIsTextDataSubmited(true);
+    // if (state == "Sing Up" && !isTextDataSubmited) {
+    //   return setIsTextDataSubmited(true);
     // }
     setIsTextDataSubmited(true);
+
+    try {
+      if (state == "login") {
+        const { data } = await axios.post(backendUrl + "/api/company/login", {
+          email,
+          password,
+        });
+        if (data.success) {
+          setCompanyData(data.company);
+          setCompanyToken(data.token);
+          localStorage.setItem("companyToken", data.token);
+          setShowRecruiterLogin(false);
+          navigate("/dashboard");
+        } else {
+          toast.error(data.message);
+        }
+      } else {
+        // Register request
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("password", password);
+        formData.append("email", email);
+        formData.append("image", image);
+
+        const { data } = await axios.post(
+          backendUrl + "/api/company/register",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        if (data.success) {
+          setCompanyData(data.company);
+          setCompanyToken(data.token);
+          localStorage.setItem("companyToken", data.token);
+          setShowRecruiterLogin(false);
+          navigate("/dashboard");
+        } else {
+          toast.error(data.message || "Something went wrong, try again!");
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
+    }
   };
 
   useEffect(() => {
@@ -46,12 +97,12 @@ export default function RecruiterLogin() {
                 <img
                   className="w-16 rounded-full"
                   src={image ? URL.createObjectURL(image) : assets.upload_area}
-                  alt=""
+                  alt="upload"
                 />
                 <input
                   onChange={(e) => setImage(e.target.files[0])}
                   type="file"
-                  name=""
+                  name="image"
                   id="image"
                   hidden
                 />
@@ -70,6 +121,7 @@ export default function RecruiterLogin() {
                 <input
                   className="outline-none text-sm"
                   type="text"
+                  name="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Company name"
@@ -82,6 +134,7 @@ export default function RecruiterLogin() {
               <input
                 className="outline-none text-sm"
                 type="email"
+                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email Id"
@@ -94,6 +147,7 @@ export default function RecruiterLogin() {
               <input
                 className="outline-none text-sm"
                 type="password"
+                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
@@ -105,7 +159,7 @@ export default function RecruiterLogin() {
 
         {state === "login" && (
           <p className="text-blue-600 text-sm my-4 cursor-pointer">
-            Fogot password?
+            Forgot password?
           </p>
         )}
         <button
@@ -115,7 +169,7 @@ export default function RecruiterLogin() {
           {state === "login"
             ? "Login"
             : isTextDataSubmited
-            ? "Sign Up"
+            ? "Create account"
             : "Next"}
         </button>
         {state === "login" ? (
