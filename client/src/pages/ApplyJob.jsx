@@ -1,32 +1,93 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-
+import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import kConvert from "k-convert";
 import moment from "moment";
-
 import Loading from "../components/Loading";
-import { assets } from "../assets/assets";
+import { assets, jobsData } from "../assets/assets";
 import JobCard from "../components/JobCard";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-
+import { toast } from "react-toastify";
+import axios from "axios";
+import { useAuth } from "@clerk/clerk-react";
 export default function ApplyJob() {
   const [jobData, setJobData] = useState(null);
-  const { id } = useParams();
-  const { jobs } = useContext(AppContext);
+  const [isAlreadyApplied, setIsAlreadyApplied] = useState(false);
 
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const {
+    jobs,
+    backendUrl,
+    userData,
+    userApplications,
+    fetchUserAppliedApplications,
+  } = useContext(AppContext);
+  const { getToken } = useAuth();
+  //Function to fetch single jobs details
   const fetchData = async () => {
-    const data = jobs.filter((job) => job._id == id);
-    if (data.length !== 0) {
-      setJobData(data[0]);
+    try {
+      const { data } = await axios.get(backendUrl + `/api/jobs/${id}`);
+
+      if (data.success) {
+        setJobData(data.job);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
     }
   };
-  useEffect(() => {
-    if (jobs.length > 0) {
-      fetchData();
+
+  const applyHandler = async () => {
+    try {
+      if (!userData) {
+        return toast.error("Login to apply for jobs!");
+      }
+      if (!userData.resume) {
+        navigate("/applications");
+        return toast.error("Upload resume to apply!");
+      }
+      const token = getToken();
+      const { data } = await axios.post(
+        backendUrl + "/api/apply",
+        {
+          jobId: jobId._id,
+        },
+        {
+          headers: { authorization: `Bearer ${token}` },
+        }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        fetchUserAppliedApplications();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
     }
-  }, [id, jobs]);
+  };
+
+  // Function to checked already applied job
+
+  const checkAlreadyApplied = () => {
+    const hasApplied = userApplications.some(
+      (item) => item.jobId._id === jobData._id
+    );
+    setIsAlreadyApplied(hasApplied);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [id]);
+
+  useEffect(() => {
+    if (userApplications.length > 0 && jobData) {
+      checkAlreadyApplied();
+    }
+  }, [jobData, userApplications, id]);
 
   return jobData ? (
     <>
@@ -65,7 +126,10 @@ export default function ApplyJob() {
               </div>
             </div>
             <div className="flex flex-col justify-center text-end text-sm max-md:mx-auto max-md:text-center  ">
-              <button className="bg-blue-600 p-2.5 px-10 text-white rounded-lg ">
+              <button
+                onClick={applyHandler}
+                className="bg-blue-600 p-2.5 px-10 text-white rounded-lg "
+              >
                 Apply Now
               </button>
               <p className="mt-1 text-gray-600">
@@ -80,8 +144,11 @@ export default function ApplyJob() {
                 className="rich-text"
                 dangerouslySetInnerHTML={{ __html: jobData.description }}
               ></div>
-              <button className="bg-blue-600 p-2.5 px-10 text-white rounded-lg  mt-10">
-                Apply Now
+              <button
+                onClick={applyHandler}
+                className="bg-blue-600 p-2.5 px-10 text-white rounded-lg  mt-10"
+              >
+                {isAlreadyApplied ? "Already Applied" : "Apply Now"}
               </button>
             </div>
             {/* Right section of more job */}

@@ -37,7 +37,7 @@ export default function AddJob() {
         }
       );
       if (data.success) {
-        toast.success(data.message);
+        toast.success("Job Added");
         setTitle("");
         setSalary(0);
         quillRef.current.root.innerHTML = "";

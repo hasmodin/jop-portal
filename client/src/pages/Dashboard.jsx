@@ -1,10 +1,26 @@
 import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 
 export default function Dashboard() {
-  const { companyData } = useContext(AppContext);
+  const { companyData, setCompanyData, companyToken, setCompanyToken } =
+    useContext(AppContext);
+
+  // function to logout
+
+  const logout = () => {
+    setCompanyToken(null);
+    localStorage.removeItem("companyToken");
+    setCompanyData(null);
+    navigate("/");
+  };
+
+  useEffect(() => {
+    if (companyData) {
+      navigate("/dashboard/manage-job");
+    }
+  }, [companyData]);
 
   const navigate = useNavigate();
   return (
@@ -29,7 +45,12 @@ export default function Dashboard() {
                 />
                 <div className="absolute hidden group-hover:block top-0 right-0 z-10 text-black rounded pt-12">
                   <ul className="list-none m-0 p-2 bg-white border border-gray-200 rounded-lg">
-                    <li className="cursor-pointer py-1 px-2 pr-10">Logout</li>
+                    <li
+                      onClick={logout}
+                      className="cursor-pointer py-1 px-2 pr-10"
+                    >
+                      Logout
+                    </li>
                   </ul>
                 </div>
               </div>

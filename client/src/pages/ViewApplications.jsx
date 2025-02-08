@@ -1,6 +1,50 @@
+import { useContext, useEffect, useState } from "react";
 import { assets, viewApplicationsPageData } from "../assets/assets";
+import { AppContext } from "../context/AppContext";
+import { toast } from "react-toastify";
+import axios from "axios";
 
 export default function ViewApplications() {
+  const fetchviewApplications = async () => {
+    const { backendUrl, companyToken } = useContext(AppContext);
+
+    const [applicants, setApplicants] = useState();
+    // Function to fetch company job applicants data
+    try {
+      const { data } = await axios.get(backendUrl + "/api/company/applicants", {
+        headers: { token: companyToken },
+      });
+      if (data.success) {
+        setApplicants(data.applications.reverse());
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const changeJobApplicationStatus = async (id, status) => {
+    try {
+      const { data } = await axios.get(
+        backendUrl + "/api/company/change-status",
+        { id, status },
+        {
+          headers: { token: companyToken },
+        }
+      );
+      if (data.success) {
+        fetchviewApplications();
+      }
+    } catch (error) {}
+  };
+
+  useEffect(() => {
+    if (companyToken) {
+      fetchviewApplications();
+    }
+  }, [companyToken]);
+
   return (
     <div className="container mx-auto p-4">
       <div>

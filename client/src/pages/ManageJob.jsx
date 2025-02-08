@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { manageJobsData } from "../assets/assets";
+
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
@@ -13,14 +13,15 @@ export default function ManageJob() {
 
   const fetchCompanyJobs = async () => {
     try {
-      const { data } = await axios.get(backendUrl + "/api/company/list-job", {
+      const { data } = await axios.get(backendUrl + "/api/company/list-jobs", {
         headers: {
           token: companyToken,
         },
       });
-      if (data.success) {
+      // console.log(data);
+      if (data.success && Array.isArray(data.jobsData)) {
+        // console.log(data.jobsData);
         setJobs(data.jobsData.reverse());
-        console.log(data.jobsData);
       } else {
         toast.error(data.message);
       }
@@ -28,6 +29,31 @@ export default function ManageJob() {
       toast.error(error.message);
     }
   };
+
+  //debugging purpose
+  // useEffect(() => {
+  //   console.log(jobs);
+  // }, [jobs]);
+
+  // Function to change job visibility
+  const changeJobVisibility = async (id) => {
+    try {
+      const { data } = await axios.post(
+        backendUrl + "api/company/change-visibility",
+        { id },
+        { headers: { token: companyToken } }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        fetchCompanyJobs();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   useEffect(() => {
     if (companyToken) {
       fetchCompanyJobs();
@@ -53,26 +79,37 @@ export default function ManageJob() {
             </tr>
           </thead>
           <tbody>
-            {jobs.map((job, index) => (
-              <tr key={index} className="text-gray-500">
-                <td className="py-2 px-4 text-left border-b max-sm:hidden">
-                  {index + 1}
-                </td>
-                <td className="py-2 px-4 text-left border-b">{job.title}</td>
-                <td className="py-2 px-4 text-left border-b max-sm:hidden">
-                  {moment(job.date).format("ll")}
-                </td>
-                <td className="py-2 px-4 text-left border-b max-sm:hidden">
-                  {job.location}
-                </td>
-                <td className="py-2 px-4 text-left border-b">
-                  {job.applicants}
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <input className="scale-125 ml-4" type="checkbox" />
-                </td>
-              </tr>
-            ))}
+            {jobs.length > 0 ? (
+              <>
+                {jobs.map((job, index) => (
+                  <tr key={index} className="text-gray-500">
+                    <td className="py-2 px-4 text-left border-b max-sm:hidden">
+                      {index + 1}
+                    </td>
+                    <td className="py-2 px-4 text-left border-b">
+                      {job.title}
+                    </td>
+                    <td className="py-2 px-4 text-left border-b max-sm:hidden">
+                      {moment(job.date).format("ll")}
+                    </td>
+                    <td className="py-2 px-4 text-left border-b max-sm:hidden">
+                      {job.location}
+                    </td>
+                    <td className="py-2 px-4 text-left border-b">
+                      {job.applicants}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      <input
+                        className="scale-125 ml-4"
+                        type="checkbox"
+                        checked={job.visible}
+                        onChange={() => changeJobVisibility(job._id)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </>
+            ) : null}
           </tbody>
         </table>
       </div>
