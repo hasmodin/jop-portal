@@ -20,7 +20,7 @@ router.get("/apply", applyForJob);
 
 // Get applied job data
 
-router.get("/application", getUserJobApplications);
+router.get("/applications", getUserJobApplications);
 
 // Update user profile
 

@@ -11,7 +11,10 @@ import jobRoutes from "./routes/jobRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import connectCloudinary from "./config/cloudinaryConfig.js";
 
-//initialize express app
+//Port
+const PORT = process.env.PORT || 5000;
+
+//initialize express appo
 const app = express();
 
 //connect to database
@@ -21,6 +24,7 @@ await connectCloudinary();
 //middleware
 app.use(cors());
 app.use(express.json());
+console.log(clerkMiddleware);
 app.use(clerkMiddleware());
 
 //Routes
@@ -31,39 +35,18 @@ app.get("/debug-sentry", function mainHandler(req, res) {
   throw new Error("My first sentry error!");
 });
 
-// app.use((req, res, next) => {
-//   console.log("Request received at", req.originalUrl);
-//   next();
-// });
-
+console.log(clerkWebhooks);
 app.post("/webhooks", clerkWebhooks);
 app.use("/api/company", companyRoutes);
 app.use("/api", jobRoutes);
 app.use("/api", userRoutes);
 
-// app.get("/api/jobs", async (req, res) => {
-//   try {
-//     const jobs = await Job.find({ visible: true }).populate({
-//       path: "companyId",
-//       select: "-password",
-//     });
-//     res.json({
-//       success: true,
-//       jobs,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     res.json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// });
-
-//Port
-const PORT = process.env.PORT || 5000;
-
 Sentry.setupExpressErrorHandler(app);
+
+// app.use((err, req, res, next) => {
+//   console.error("Error caught in Express:", err);
+//   res.status(500).send("Internal Server Error");
+// });
 
 app.listen(PORT, () => {
   console.log(`Server is listening on ${PORT}`);

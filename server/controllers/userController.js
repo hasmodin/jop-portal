@@ -3,9 +3,8 @@ import JobApplication from "../models/jobApplication.js";
 
 import Job from "../models/job.js";
 import { v2 as cloudinary } from "cloudinary";
-import upload from "../config/multer.js";
 
-// Get use data
+// Get user data
 export const getUserData = async (req, res) => {
   const userId = req.auth.userId;
   try {
@@ -97,7 +96,7 @@ export const updateUserResume = async (req, res) => {
   const userId = req.auth.userId;
   try {
     const userData = await User.findById(userId);
-    const resumeFile = req.resumeFile;
+    const resumeFile = req.file;
 
     if (resumeFile) {
       const resumeUpload = await cloudinary.uploader.upload(resumeFile.path);

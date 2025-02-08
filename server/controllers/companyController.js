@@ -1,7 +1,7 @@
 import Company from "../models/company.js";
 import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
-import upload from "../config/multer.js";
+
 import generateToken from "../utils/generateToken.js";
 import Job from "../models/job.js";
 import jobApplication from "../models/jobApplication.js";
@@ -121,7 +121,20 @@ export const postJob = async (req, res) => {
 };
 
 //Get company job applicants
-export const getCompanyJobApplicants = async (req, res) => {};
+export const getCompanyJobApplicants = async (req, res) => {
+  try {
+    const companyId = req.company._id;
+    //find job application for the user and populate related data
+    const applications = await jobApplication
+      .find({ companyId })
+      .populate("userId", "name image resume")
+      .populate("jobId", "title locaiton category level salary")
+      .exec();
+    return res.json({ success: true, applications });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
 
 //Get Company posted jobs
 export const getCompanyPostedJobs = async (req, res) => {
@@ -137,7 +150,7 @@ export const getCompanyPostedJobs = async (req, res) => {
       })
     );
     res.json({
-      seccess: true,
+      success: true,
       jobsData,
     });
   } catch (error) {
@@ -149,10 +162,21 @@ export const getCompanyPostedJobs = async (req, res) => {
 };
 
 //Change job application status
-export const changeJobApplicationStatus = async (req, res) => {};
+export const changeJobApplicationStatus = async (req, res) => {
+  try {
+    const { id, status } = req.body;
+    // find job application and update the status
+    await jobApplication.findOneAndUpdate({ _id: id }, { status });
+    res.json({ success: true, message: "Status Changed" });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 //Change job visibility
-
 export const changeJobVisibility = async (req, res) => {
   const { id } = req.body;
   try {
